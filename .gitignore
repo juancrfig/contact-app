@@ -4,3 +4,4 @@ backend/__pycache__/
 backend/*.pyc
 backend/.flaskenv
 backend/.dockerignore
+backend/resources/__pycache__/
