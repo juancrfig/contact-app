@@ -1,0 +1,6 @@
+backend/.venv/
+backend/.idea/
+backend/__pycache__/
+backend/*.pyc
+backend/.flaskenv
+backend/.dockerignore
