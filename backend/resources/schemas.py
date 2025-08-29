@@ -11,3 +11,8 @@ class ContactSchema(Schema):
 class ContactUpdateSchema(Schema):
     email = fields.Email(required=True)
     favorite = fields.Boolean(required=False)
+
+class UserSchema(Schema):
+    id = fields.Int(dump_only=True)
+    username = fields.Str(required=True)
+    password = fields.Str(required=True, load_only=True)

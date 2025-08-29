@@ -1,5 +1,7 @@
-from flask import Flask
+from flask import Flask, jsonify
 from flask_smorest import Api
+from flask_jwt_extended import JWTManager
+from resources.user import blp as user_blueprint
 
 from models.db import db
 import os
@@ -21,11 +23,46 @@ def create_app(db_url=None):
 
     api = Api(app)
 
+    app.config["JWT_SECRET_KEY"] = "juanes"   # to-do: str(secrets.SystemRandom().getrandbits(128)) generate a safe key
+    jwt = JWTManager(app)
+
+    @jwt.expired_token_loader
+    def expired_token_callback(jwt_header, jwt_payload):
+        return (
+            jsonify({"message": "The token has expired.", "error": "token_expired"}),
+            401,
+        )
+
+    @jwt.invalid_token_loader
+    def invalid_token_callback(error):
+        return (
+            jsonify(
+                {"message": "Signature verification failed.", "error": "invalid_token"}
+            ),
+            401,
+        )
+
+    @jwt.unauthorized_loader
+    def missing_token_callback(error):
+        return (
+            jsonify(
+                {
+                    "description": "Request does not contain an access token.",
+                    "error": "authorization_required",
+                }
+            ),
+            401,
+        )
+
     from resources.contacts import blp as contacts_blueprint
 
     with app.app_context():
         db.create_all()
 
+    api.register_blueprint(user_blueprint)
     api.register_blueprint(contacts_blueprint)
 
     return app
+
+# Should I add JWT Claims for Administrator?
+# If so, How to use JWT claims in an endpoint

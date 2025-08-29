@@ -1,5 +1,6 @@
 from flask.views import MethodView
 from flask_smorest import Blueprint, abort
+from flask_jwt_extended import jwt_required
 from models.db import db
 from models.contacts import ContactModel
 from resources.schemas import ContactUpdateSchema
@@ -12,11 +13,13 @@ blp = Blueprint("contacts", __name__, description="Operations related to contact
 @blp.route("/contacts")
 class ContactList(MethodView):
 
+    @jwt_required
     @blp.response(200, ContactSchema(many=True))
     def get(self):
         """Retrieves all contacts"""
         return ContactModel.query.all()
 
+    @jwt_required
     @blp.arguments(ContactSchema)
     @blp.response(201, ContactSchema)
     def post(self, contact_data):
@@ -35,6 +38,7 @@ class ContactList(MethodView):
 
         return contact
 
+    @jwt_required
     @blp.route("/contacts/<string:contact_id>")
     class Contact(MethodView):
         @blp.response(200, ContactSchema)
@@ -47,6 +51,7 @@ class ContactList(MethodView):
             return {"message": "Contact deleted successfully"}, 200
 
 
+    @jwt_required
     @blp.arguments(ContactUpdateSchema)
     @blp.response(200, ContactSchema)
     def patch(self, update_data, contact_id):
