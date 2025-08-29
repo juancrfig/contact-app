@@ -1,56 +1,64 @@
-import uuid
-from flask import request
 from flask.views import MethodView
 from flask_smorest import Blueprint, abort
-from models import db
-from schemas import ContactSchema
+from models.db import db
+from models.contacts import ContactModel
+from resources.schemas import ContactUpdateSchema
+from .schemas import ContactSchema
+from sqlalchemy.exc import SQLAlchemyError
 
 
 blp = Blueprint("contacts", __name__, description="Operations related to contacts")
 
 @blp.route("/contacts")
-class Contact(MethodView):
+class ContactList(MethodView):
 
     @blp.response(200, ContactSchema(many=True))
     def get(self):
-        # Check for the 'favorite' query parameter. It'll return None if the parameter is not in the URL
-        favorite_request = request.args.get('favorite')
-        if favorite_request and favorite_request.lower() == 'true':
-            favorite_contacts = [
-                contact for contact in db["contacts"] if contact["favorite"]
-            ]
-            return {"contacts": favorite_contacts}
-        else:
-            return {"contacts": db["contacts"]}
-
-    def delete(self):
-        email_to_delete = request.get_json()["email"]
-
-        for contact in db["contacts"]:
-            if contact["email"] == email_to_delete:
-                db["contacts"].remove(contact)
-
-        return f"Contact with email {email_to_delete} deleted."
+        """Retrieves all contacts"""
+        return ContactModel.query.all()
 
     @blp.arguments(ContactSchema)
     @blp.response(201, ContactSchema)
     def post(self, contact_data):
+        """Creates a new contact"""
+        # The database can enforce email uniqueness, which is more reliable
+        if ContactModel.query.filter(ContactModel.email == contact_data["email"]).first():
+            abort(409, message="A contact with that email already exists")
 
-        for contact in db["contacts"]:
-            if contact["email"] == contact_data["email"]:
-                abort(400, message="Email already registered.")
+        contact = ContactModel(**contact_data)
 
-        contact_id = uuid.uuid4().hex
-        new_contact = {**contact_data, "id": contact_id}
-        db["contacts"].append(new_contact)
+        try:
+            db.session.add(contact)
+            db.session.commit()
+        except SQLAlchemyError as e:
+            abort(409, message=f"There was a problem creating a new contact: {e}")
 
-        return new_contact
+        return contact
 
-    def put(self, data):
-        email_to_update = data["email"]
+    @blp.route("/contacts/<string:contact_id>")
+    class Contact(MethodView):
+        @blp.response(200, ContactSchema)
+        def delete(self, contact_id):
+            """Deletes a contact by its ID"""
+            contact = ContactModel.query.get_or_404(contact_id)
+            db.session.delete(contact)
+            db.session.commit()
+            # A 204 response is standard for successful deletion with no content to return
+            return {"message": "Contact deleted successfully"}, 200
 
-        for contact in db["contacts"]:
-            if contact["email"] == email_to_update:
-                contact["favorite"] = not contact["favorite"]
 
-        return f'Contact with email: "{email_to_update}" updated.'
+    @blp.arguments(ContactUpdateSchema)
+    @blp.response(200, ContactSchema)
+    def patch(self, update_data, contact_id):
+        """Updates an existing contact's favorite state"""
+        contact = ContactModel.query.get_or_404(contact_id)
+
+        # Update the contact object with new data if it exists in the request
+        for key, value in update_data.items():
+            setattr(contact, key, value)
+
+        db.session.add(contact)
+        db.session.commit()
+
+        return contact
+
