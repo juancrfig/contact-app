@@ -6,3 +6,4 @@ backend/.flaskenv
 backend/.dockerignore
 backend/resources/__pycache__/
 backend/instance
+backend/models/__pycache__/
