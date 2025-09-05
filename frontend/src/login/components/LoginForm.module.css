@@ -23,6 +23,7 @@
 
 /* Body/Screen Styling */
 .screen {
+    box-sizing: border-box;
     display: flex;
     align-items: center;
     justify-content: center;
