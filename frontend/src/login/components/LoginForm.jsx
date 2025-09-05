@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import styles from './LoginForm.module.css';
 
 function LoginForm() {
 
@@ -17,18 +18,39 @@ function LoginForm() {
     }
 
     return (
-      <form onSubmit={handleSubmit}>
-          <div>
-            <label htmlFor="username" >Username </label>
-            <input type="text" id="username" value={username} onChange={handleUsernameChange} />
+      <div className={styles.screen}>
+        <form onSubmit={handleSubmit} className={styles.card} aria-labelledby="loginTitle">
+          <h1 id="loginTitle" className={styles.title}>Welcome back</h1>
+          <div className={styles.field}>
+            <label className={styles.label} htmlFor="username">Username</label>
+            <input
+              className={styles.input}
+              type="text"
+              id="username"
+              value={username}
+              onChange={handleUsernameChange}
+              placeholder="Enter your username"
+              autoComplete="username"
+            />
           </div>
-          <div>
-              <label htmlFor="password">Password</label>
-              <input type="password" id="password" value={password} onChange={handlePasswordChange} />/
+          <div className={styles.field}>
+            <label className={styles.label} htmlFor="password">Password</label>
+            <input
+              className={styles.input}
+              type="password"
+              id="password"
+              value={password}
+              onChange={handlePasswordChange}
+              placeholder="••••••••"
+              autoComplete="current-password"
+            />
           </div>
-          <button type="submit">Login</button>
-          <button type="button">Register</button>
-      </form>
+          <div className={styles.actions}>
+            <button className={styles.btnPrimary} type="submit">Login</button>
+            <button className={styles.btnGhost} type="button">Register</button>
+          </div>
+        </form>
+      </div>
     );
 }
 
